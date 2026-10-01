@@ -5,4 +5,4 @@ extension/Note-cookie.md
 guide-design-composants.md
 
 # A local archive made in the Finder: the store package is dist/WikiRemastered-*-chrome-web-store.zip.
-extension.zip
+extension*.zip

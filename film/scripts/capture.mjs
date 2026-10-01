@@ -11,7 +11,8 @@
  * Needs Google Chrome and a network connection (the lab's cards show the site's pictures).
  * Debugging aids: CHROME_FLAGS adds flags to Chrome ("--disable-gpu --disable-gpu-compositing"
  * reproduces a browser without hardware acceleration); INJECT_CSS and INJECT_JS run in the
- * opening's shadow root at frame 5.
+ * opening's shadow root at frame 5; CAPTURE_DIR writes the frames there instead of public/capture/<take>
+ * (a debugging take then leaves the film's footage alone).
  */
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -102,7 +103,7 @@ await evaluate(`Promise.all([...document.fonts].map(font => font.load().catch(()
   'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/500px-Crab_Nebula.jpg',
 ].map(src => new Promise(resolve => { const image = new Image(); image.onload = image.onerror = resolve; image.src = src; })))).then(() => true)`);
 
-const out = join(FILM, 'public/capture', take);
+const out = process.env.CAPTURE_DIR || join(FILM, 'public/capture', take);
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 

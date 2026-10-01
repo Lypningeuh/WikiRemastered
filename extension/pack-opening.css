@@ -290,11 +290,20 @@ dialog::backdrop { background: transparent; }
 }
 .pack-base { clip-path: inset(91.75% 0 0 0); }
 /* Without hardware acceleration (see isSoftwareCompositing): the pack drawn flat, its face one
-   image turned in 3D as a whole; no back, no walls (a software compositor draws them over it). */
-.root[data-flat] .pack-body, .root[data-flat] .pack-face { transform-style: flat; }
-.root[data-flat] .pack-face[data-side="back"], .root[data-flat] .pack-wall { display: none; }
+   image turned in 3D as a whole (the first front band, stretched to the bottom seal: see
+   buildPackVolume), with a single back plate (.pack-back, below); none of the bands of the back,
+   the walls or the other bands of the front (a software compositor draws them over it, or loses
+   them). The whole pack is one layer, which the processor turns at every frame, rather
+   than a dozen planes it would stack one by one. And what it pays for at every frame goes: the
+   grain blended over the whole room, the foil and glare blended over the cards, the slices of
+   their edges. */
+.root[data-flat] :is(.pack, .pack-body, .pack-face) { transform-style: flat; }
+.root[data-flat] .pack-face[data-side="back"], .root[data-flat] .pack-wall, .root[data-flat] .pack-base,
+.root[data-flat] .pack-face[data-side="front"] .band:not(:first-child) { display: none; }
+.root[data-flat] .pack-face[data-side="front"] .band:first-child { --z: 0px; --a: 0deg; }
+.root[data-flat] .backdrop::after, .root[data-flat] .holo, .root[data-flat] .glare, .root[data-flat] .rim { display: none; }
 /* Back of the pack: plain dark foil, cut to the same silhouette. */
-.pack-face[data-side="back"] .band {
+:is(.pack-face[data-side="back"] .band, .pack-back) {
   background:
     linear-gradient(180deg, rgb(255 255 255 / .05), transparent 28%, transparent 72%, rgb(0 0 0 / .22)),
     linear-gradient(90deg, #060607, #18181d 7%, #26262c 30%, #141418 48%, #0f0f12 70%, #1c1c22 90%, #060607);
@@ -321,7 +330,7 @@ dialog::backdrop { background: transparent; }
 .pack-wall.left { left: calc(var(--x, 2.5%) - var(--depth) * var(--wme-inflate, 1) / 2); transform: rotateZ(var(--lean, 0deg)) rotateY(90deg); }
 .pack-wall.right { left: calc(100% - var(--x, 2.5%) - var(--depth) * var(--wme-inflate, 1) / 2); transform: rotateZ(calc(var(--lean, 0deg) * -1)) rotateY(-90deg); }
 /* The drawn packs are printed on one flat paper: their back and sides are that paper too. */
-.root[data-pack-style="puzzle"] .pack-face[data-side="back"] .band {
+.root[data-pack-style="puzzle"] :is(.pack-face[data-side="back"] .band, .pack-back) {
   background:
     linear-gradient(180deg, rgb(255 255 255 / .1), transparent 26%, transparent 74%, rgb(150 80 0 / .2)),
     linear-gradient(90deg, #d8900f, #f7b82c 8%, #ffc53a 32%, #f6b62e 58%, #eeac25 84%, #d8900f);
@@ -331,7 +340,7 @@ dialog::backdrop { background: transparent; }
     linear-gradient(180deg, rgb(255 255 255 / .12), transparent 18%, transparent 82%, rgb(150 80 0 / .28)),
     linear-gradient(90deg, #c98210, #f4b12b 50%, #c98210);
 }
-.root[data-pack-style="green"] .pack-face[data-side="back"] .band {
+.root[data-pack-style="green"] :is(.pack-face[data-side="back"] .band, .pack-back) {
   background:
     linear-gradient(180deg, rgb(255 255 255 / .08), transparent 26%, transparent 74%, rgb(0 40 25 / .25)),
     linear-gradient(90deg, #11724a, #17895a 8%, #1c9a66 32%, #198e5e 58%, #168655 84%, #11724a);
@@ -341,7 +350,7 @@ dialog::backdrop { background: transparent; }
     linear-gradient(180deg, rgb(255 255 255 / .1), transparent 18%, transparent 82%, rgb(0 40 25 / .3)),
     linear-gradient(90deg, #0f6a44, #1b9563 50%, #0f6a44);
 }
-.root[data-pack-style="globe"] .pack-face[data-side="back"] .band {
+.root[data-pack-style="globe"] :is(.pack-face[data-side="back"] .band, .pack-back) {
   background:
     linear-gradient(180deg, rgb(255 255 255 / .3), transparent 26%, transparent 74%, rgb(120 110 90 / .18)),
     linear-gradient(90deg, #d9d3c4, #ece7dc 8%, #f7f4ec 32%, #f1ede3 58%, #e9e4d8 84%, #d9d3c4);
@@ -351,8 +360,21 @@ dialog::backdrop { background: transparent; }
     linear-gradient(180deg, rgb(255 255 255 / .35), transparent 18%, transparent 82%, rgb(120 110 90 / .25)),
     linear-gradient(90deg, #cfc8b7, #f1ede3 50%, #cfc8b7);
 }
+/* Drawn flat (see data-flat above), the pack has a single back: a plate beside it, turned away,
+   and each of the two only shows from its own side (the pack spins in on its first entrance). */
+.pack-back { display: none; }
+.root[data-flat] .pack-back {
+  --art-size: 100% 100%;
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: rotateY(180deg);
+}
+.root[data-flat] :is(.pack, .pack-back) { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .root[data-pack-style="classic"] .pack-face[data-side="back"],
-.root[data-pack-style="classic"] .pack-wall { display: none; }
+.root[data-pack-style="classic"] .pack-wall,
+.root[data-pack-style="classic"] .pack-back { display: none; }
 /* The original pack is flat, but its front still sits a hair in front of the cards inside it. */
 .root[data-pack-style="classic"] .band { --z: 2px !important; --a: 0deg !important; }
 

@@ -150,7 +150,7 @@ function ribbonTones(color) {
   });
 }
 
-export function createLightShow({ canvas, front, leak, rate = () => 1, sealLeft = 3.4, sealRight = 96.6 }) {
+export function createLightShow({ canvas, front, leak, rate = () => 1, sealLeft = 3.4, sealRight = 96.6, lite = false }) {
   const layers = { back: canvas.getContext('2d'), front: front.getContext('2d'), leak: leak.getContext('2d') };
   const sprite = canvas.ownerDocument.createElement('canvas').getContext('2d'); // Where a fading piece is drawn solid first.
   let ctx = layers.back;
@@ -189,8 +189,12 @@ export function createLightShow({ canvas, front, leak, rate = () => 1, sealLeft 
     width = packWidth;
     cssWidth = 4.2 * width;
     cssHeight = 4.4 * width;
-    // A budget of pixels: a big window must not make the show heavy.
-    scale = clamp(Math.min(devicePixelRatio || 1, Math.sqrt(2.6e6 / (cssWidth * cssHeight))), 1, 2);
+    // A budget of pixels: a big window must not make the show heavy. Without hardware acceleration
+    // (`lite`) every pixel of these canvases is composited by the processor at every frame: far
+    // fewer, drawn smaller and stretched (the light is soft, the pieces small, it hardly shows).
+    scale = lite
+      ? clamp(Math.sqrt(.55e6 / (cssWidth * cssHeight)), .45, 1)
+      : clamp(Math.min(devicePixelRatio || 1, Math.sqrt(2.6e6 / (cssWidth * cssHeight))), 1, 2);
     for (const [element, depth] of [[canvas, depths.back], [front, depths.front]]) {
       element.width = Math.round(cssWidth * scale);
       element.height = Math.round(cssHeight * scale);

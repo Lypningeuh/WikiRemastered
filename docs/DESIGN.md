@@ -51,6 +51,8 @@ Les illustrations des cartes et paquets, couleurs de rareté, effets de révéla
 
 C’est la scène la plus expressive du thème, mais elle reste dans le même langage : graphite `#111113`, une seule lumière douce venue du haut, commandes graphite et CTA vert, sans particule, halo, flash plein écran ni flou de verre. La rareté ne colore jamais la salle (seule exception : la lumière qui monte du paquet ouvert, qui reste attachée à lui et disparaît avec Anti-spoil). Elle se lit sur la carte (cadre natif, puce), sur la pastille sous la carte (même puce, à plat), sur les segments du compteur et dans le rythme de la révélation. Les faces de cartes reprennent le composant natif : cadre de rareté, illustration sur les 45 % supérieurs, puce, titre, sous-titre, ATK / DEF. Le foil et le reflet suivent le pointeur, en retenue, sans jamais colorer le texte.
 
+**Sans accélération matérielle.** Chrome compose alors la page au processeur : il perd les plans découpés d’une scène 3D (le bas du paquet disparaissait), les empile sans les trier et paie chaque couche à chaque image. L’ouverture le détecte (pas de WebGL, ou un WebGL logiciel) et passe en mode allégé (`data-flat`). Le paquet devient une seule couche : sa face entière, jusqu’au sceau du bas, tournée en 3D d’un bloc, avec un dos à part qui ne se voit que de dos. Le grain fondu sur toute la salle, le foil, le reflet et les tranches des cartes disparaissent ; la lumière et les pièces de puzzle sont dessinées sur des toiles de bien moins de pixels, étirées. Le déroulé reste entier, à 60 images par seconde (`node film/scripts/perf.mjs software`).
+
 | Rareté | Mise en scène |
 | --- | --- |
 | Commune, peu commune | Retournement simple |

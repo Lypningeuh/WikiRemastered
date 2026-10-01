@@ -28,3 +28,4 @@ npm run render    # repères, musique, puis rendu dans out/wikiremastered.mp4
 - **Cartes** : `src/cards/` reproduit la carte du jeu comme l’ouverture la dessine (cadres du site, images de Wikimedia Commons, chargées pendant le rendu).
 - **Son** : `scripts/cues.mjs` écrit tous les repères du film (`out/cues.json`) à partir de la timeline, du montage et du journal de capture ; `scripts/soundtrack.mjs` en tire la musique et les effets, calés à l’image près.
 - **Relecture** : `sh scripts/stills.sh out/stills 30 600 1028` rend quelques images, `python3 scripts/sheet.py out/stills out/sheet.jpg` en fait une planche.
+- **Fluidité** : `node scripts/perf.mjs` mesure en temps réel les images par seconde de chaque moment de l’ouverture, avec le GPU ou, avec `software`, comme sans accélération matérielle ; `SHOTS=<dossier>` garde une capture de chaque moment.

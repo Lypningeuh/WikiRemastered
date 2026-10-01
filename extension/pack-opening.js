@@ -166,6 +166,35 @@ async function rasterArt(url, width, height) {
 // Pixels for a CSS size: device pixels, with room for the pack coming a little nearer, capped.
 const artPixels = css => Math.round(css * Math.min(3, Math.max(1.5, (devicePixelRatio || 1) * 1.2)));
 
+/* The backs of the cards that come out of the drawn packs, each drawn once per page as a bitmap
+   for the largest a card is shown (the SVG carries filters, see rasterArt), decoded, and kept for
+   every opening that follows. Made anew at each opening, all three at once and alongside
+   everything else, a back could still be on its way when the cards came out: they showed as
+   plain colour, until the picture landed. A back that fails is tried again the next time. */
+const cardBacks = new Map();
+function cardBack(name, source) {
+  const width = artPixels(280);
+  const key = `${name} ${width}`;
+  if (!cardBacks.has(key)) {
+    const ready = fetch(source)
+      .then(response => (response.ok ? response.text() : Promise.reject(new Error('back'))))
+      .then(async svg => {
+        const blob = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+        try { return await rasterArt(blob, width, artPixels(392)); } finally { URL.revokeObjectURL(blob); }
+      })
+      .then(async ({ url }) => {
+        // Held here, the decoded picture stays at hand for the cards that show it.
+        const image = new Image();
+        image.src = url;
+        await image.decode().catch(() => {});
+        return { url, image };
+      });
+    ready.catch(() => cardBacks.delete(key));
+    cardBacks.set(key, ready);
+  }
+  return cardBacks.get(key);
+}
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const rand = (min, max) => min + Math.random() * (max - min);
 const pick = list => list[Math.floor(Math.random() * list.length)];
@@ -611,7 +640,7 @@ function packSide(y) {
   return x / 640 * 100;
 }
 
-function buildPackVolume(body) {
+function buildPackVolume(body, { flat = false } = {}) {
   const { top, bottom, depth, bands, ratio } = PACK_VOLUME;
   const middle = (top + bottom) / 2;
   const half = (bottom - top) / 2;
@@ -632,8 +661,11 @@ function buildPackVolume(body) {
       band.style.setProperty('--yc', `${((y0 + y1) / 2).toFixed(3)}`);
       band.style.setProperty('--z', `calc(var(--pack-w) * ${(swell((u0 + u1) / 2) * depth / 2).toFixed(4)})`);
       band.style.setProperty('--a', `${(Math.atan2(rise, run) * 180 / Math.PI).toFixed(2)}deg`);
-      // The first front band carries the torn edge (see applySeam).
-      if (side === 'front' && index === 0) band.dataset.bottom = (y1 + .15).toFixed(2);
+      // The first front band carries the torn edge (see applySeam). Drawn flat, it is the whole
+      // face, down to the bottom seal, and the other bands are not shown (see pack-opening.css).
+      // Its cut then reaches well past the bottom of the pack: the software compositor cuts off
+      // the bottom of a clip that ends on the edge (the art does not repeat: nothing shows there).
+      if (side === 'front' && index === 0) band.dataset.bottom = flat ? '120' : (y1 + .15).toFixed(2);
       if (side === 'front') band.append(h('i', 'pack-sweep'));
       group.append(band);
     }
@@ -803,7 +835,7 @@ export function openPackExperience({
   // is flattened, so they would sink into the swell of the pack.
   const guideScissors = h('div', 'guide-scissors');
   guideScissors.innerHTML = `<div class="scissors-body"><svg viewBox="0 0 120 60" aria-hidden="true">${SCISSORS_DEFS}<g class="half half-b">${scissorsHalf('b')}</g><g class="half half-a">${scissorsHalf('a')}</g>${SCISSORS_PIVOT}</svg><i class="snip-spark"></i></div>`;
-  buildPackVolume(packBody);
+  buildPackVolume(packBody, { flat });
   pack.append(packBody, packLeak, packMouth, packRim, packSpill, packCap, packStrip, packGuide, guideScissors);
 
   // Everything that follows the tear line: the top of the pack, the edge of the body, the
@@ -821,6 +853,7 @@ export function openPackExperience({
   }
   applySeam();
   packTilt.append(pack);
+  if (flat) packTilt.append(h('i', 'pack-back'));
   packFloat.append(packTilt);
   packWrap.append(packFloat);
   center.append(ground, deck, packWrap);
@@ -989,6 +1022,7 @@ export function openPackExperience({
       for (const item of packUrls) URL.revokeObjectURL(item);
       packUrls = made;
       root.dataset.packStyle = name;
+      dressBack(name);
       scissorsFor(name);
       root.style.setProperty('--pack-src', `url("${url}")`);
       root.dataset.packReady = '';
@@ -1002,6 +1036,7 @@ export function openPackExperience({
     if (upcoming?.name === name) return;
     upcoming?.ready.then(({ discard }) => discard());
     upcoming = name === packLook ? null : { name, ready: prepareLook(name) };
+    dressBack(name);
   }
   // The art of a design: the one made in advance if it is that one, else a new one.
   function takeLook(name) {
@@ -1035,23 +1070,20 @@ export function openPackExperience({
     root.style.setProperty('--scissors-open', open);
     root.style.setProperty('--scissors-shut', shut);
   }
-  // The backs of the cards that come out of the drawn packs (see pack-opening.css), each drawn
-  // once as a bitmap for the largest a card is shown (the SVG carries filters, see rasterArt).
-  // Until then, and if that fails, a back is its plain colour.
-  const backUrls = [];
-  for (const [name, source] of [['puzzle', puzzleBack], ['green', greenBack], ['globe', globeBack]]) {
-    if (!source) continue;
-    fetch(source).then(response => (response.ok ? response.text() : Promise.reject(new Error('back'))))
-      .then(async svg => {
-        const blob = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-        try { return await rasterArt(blob, artPixels(280), artPixels(392)); } finally { URL.revokeObjectURL(blob); }
-      })
-      .then(({ url }) => {
-        if (!alive) { URL.revokeObjectURL(url); return; }
-        backUrls.push(url);
-        root.style.setProperty(`--${name}-back`, `url("${url}")`);
-      }, () => {});
+  // The backs of the cards that come out of the drawn packs (see pack-opening.css and cardBack):
+  // the current design's at once, the next one's with its pack art (see prepareNext). The cards
+  // wait for theirs before they come out; if it cannot be had, a back is its plain colour.
+  const BACKS = { puzzle: puzzleBack, green: greenBack, globe: globeBack };
+  function dressBack(name) {
+    if (!BACKS[name]) return Promise.resolve();
+    return cardBack(name, BACKS[name]).then(({ url, image }) => {
+      if (alive) root.style.setProperty(`--${name}-back`, `url("${url}")`);
+      // Decoded again if the browser let it go meanwhile (a page left open a long while): the
+      // cards that come out next show it at once.
+      return image.decode().catch(() => {});
+    }, () => {});
   }
+  dressBack(packLook);
 
   const audio = createAudio(assetOrigin);
   audio.muted = muted;
@@ -1677,6 +1709,7 @@ export function openPackExperience({
     rate: () => 1 / pace(),
     sealLeft: SEAL_LEFT,
     sealRight: SEAL_RIGHT,
+    lite: flat,
   });
   const LIGHT = [.3, .32, .56, .74, .9, 1]; // How strongly the inside of the pack takes the best card's colour, by tier.
   let bestTier = 0; // Of the real cards only: it sets the sound.
@@ -2512,7 +2545,10 @@ export function openPackExperience({
     const waiting = setTimeout(() => loading.classList.add('on'), 500);
     let result;
     // The light show gets its moment before the cards come out; without it (anti-spoil) the pace is the same as ever.
-    try { [result] = await Promise.all([request, sleep(pack.hasAttribute('data-lit') ? 520 : 260)]); } catch (error) {
+    // The cards' back too: they do not come out as plain colour (it is long ready, but for a slow
+    // first opening), and they do not wait for it more than a moment.
+    const back = Promise.race([dressBack(packLook), sleep(1500)]);
+    try { [result] = await Promise.all([request, sleep(pack.hasAttribute('data-lit') ? 520 : 260), back]); } catch (error) {
       clearTimeout(waiting);
       loading.classList.remove('on');
       busy = false;
@@ -2600,7 +2636,6 @@ export function openPackExperience({
     host.remove();
     for (const item of packUrls) URL.revokeObjectURL(item);
     upcoming?.ready.then(({ discard }) => discard());
-    backUrls.forEach(url => URL.revokeObjectURL(url));
   }
 
   /* Wiring */
@@ -2896,6 +2931,15 @@ export function installPackOpening({ cssUrl, packUrl, puzzleUrl, puzzleBackUrl, 
     active = null;
     document.documentElement.removeAttribute('data-wme-pack-opening');
   }
+
+  // The design's card back is drawn while the pointer reaches the button: even the first opening
+  // of the page has it (see cardBack).
+  const backUrls = { puzzle: puzzleBackUrl, green: greenBackUrl, globe: globeBackUrl };
+  window.addEventListener('pointerover', event => {
+    if (!onPulls() || !(event.target instanceof Element) || !event.target.closest(NORMAL_PACK)) return;
+    const design = document.documentElement.getAttribute('data-wme-pack-style');
+    if (backUrls[design]) cardBack(design, backUrls[design]).catch(() => {});
+  }, { passive: true });
 
   window.addEventListener('click', event => {
     if (!event.isTrusted || event.button !== 0 || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
