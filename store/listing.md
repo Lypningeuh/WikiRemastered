@@ -2,11 +2,11 @@
 
 Tout ce qu’il faut pour remplir la fiche dans le [tableau de bord développeur](https://chrome.google.com/webstore/devconsole), dans l’ordre des onglets.
 
-## Nouvel examen (version 1.33.2)
+## Nouvel examen (version 1.33.3)
 
 Dans le [tableau de bord développeur](https://chrome.google.com/webstore/devconsole), sur la fiche de WikiRemastered :
 
-1. **Paquet** › **Importer un nouveau paquet** : `dist/WikiRemastered-1.33.2-chrome-web-store.zip` (produit par `python3 scripts/package.py`). La version doit être plus élevée que le dernier envoi : 1.33.2 convient, qu’un envoi 1.32.0, 1.33.0 ou 1.33.1 ait eu lieu ou non.
+1. **Paquet** › **Importer un nouveau paquet** : `dist/WikiRemastered-1.33.3-chrome-web-store.zip` (produit par `python3 scripts/package.py`). La version doit être plus élevée que le dernier envoi : 1.33.3 convient, qu’un envoi 1.32.0 à 1.33.2 ait eu lieu ou non.
 2. **Fiche Play Store** : remplacer la description par celle ci-dessous (le résumé vient du manifeste). Remplacer les captures par celles listées plus bas, l’image de présentation en premier, et la grande vignette (le bouton et la mention AFK ont disparu).
 3. **Confidentialité** : remplacer la justification de `alarms` et de `storage` par celles ci-dessous. Laisser « Code distant : Non ».
 4. Vérifier que la page des règles de confidentialité est à jour en ligne (elle suit `store/privacy.md` une fois poussé sur GitHub).
@@ -19,12 +19,13 @@ Ce qui a changé depuis la version examinée, si l’on veut le préciser :
 - L’ouverture fonctionne aussi sans accélération matérielle : le paquet y est dessiné à plat, en entier, et les effets les plus lourds pour le processeur sont retirés, pour qu’elle reste fluide.
 - Anti-spoil garde l’ordre des cartes (la meilleure à la fin) et ne cache que les couleurs avant le retournement.
 - Le dos des cartes est prêt dès qu’elles sortent du paquet (il pouvait apparaître en retard, en aplat de couleur).
+- Moins de travail en arrière-plan : la réclamation des succès passe toutes les 15 minutes (jamais pendant une ouverture) et les vérifications du marché ne lisent plus que leurs propres réglages.
 
 ## À téléverser
 
 | Élément | Fichier |
 |---|---|
-| Paquet de l’extension | `dist/WikiRemastered-1.33.2-chrome-web-store.zip` (`manifest.json` à la racine, comme la boutique l’exige) |
+| Paquet de l’extension | `dist/WikiRemastered-1.33.3-chrome-web-store.zip` (`manifest.json` à la racine, comme la boutique l’exige) |
 | Icône de la boutique (128 × 128) | `store/images/icon-128.png` |
 | Petite vignette promotionnelle (440 × 280, obligatoire) | `store/images/promo-small-440x280.png` |
 | Grande vignette (1400 × 560, facultative) | `store/images/promo-marquee-1400x560.png` |

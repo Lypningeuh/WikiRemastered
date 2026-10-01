@@ -1,5 +1,6 @@
 import { isAccount, marketKey } from './market-policy.js';
 import { lateBidKey, LATE_BID_WINDOW_MS, eligibleLateBid } from './late-bid-policy.js';
+import { readPrefixed } from './stored.js';
 
 const PREFIX = 'wme:late-bids:';
 const ALARM = 'wme:late-bids';
@@ -172,7 +173,7 @@ function statesIn(all) {
 async function reschedule() {
   const revision = ++scheduleRevision;
   clearTimeout(wakeTimer);
-  const all = await chrome.storage.local.get(null);
+  const all = await readPrefixed(PREFIX);
   if (revision !== scheduleRevision) return;
   let nearest = Infinity;
   for (const { state } of statesIn(all)) for (const plan of Object.values(state.plans)) {
@@ -194,7 +195,7 @@ async function tick() {
   if (ticking) return;
   ticking = true;
   try {
-    const all = await chrome.storage.local.get(null);
+    const all = await readPrefixed(PREFIX);
     const due = statesIn(all).flatMap(({ account, state }) => Object.values(state.plans)
       .filter(plan => isAccount(plan?.id) && (pendingWork(plan) || (plan.active && plan.nextAt <= Date.now())))
       .map(plan => ({ account, plan })));

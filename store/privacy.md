@@ -1,6 +1,6 @@
 # Règles de confidentialité de WikiRemastered
 
-*Dernière mise à jour : 30 septembre 2026 (version 1.33.2)*
+*Dernière mise à jour : 30 septembre 2026 (version 1.33.3)*
 
 WikiRemastered est une extension de navigateur non officielle pour le jeu Wiki Masters (wiki-masters.com).
 

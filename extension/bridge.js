@@ -276,7 +276,11 @@
     if (timer !== null) return;
     timer = setTimeout(scan, 80);
   }
-  const observer = new MutationObserver(() => {
+  // Changes made inside the extension's own nodes (prices, panels, the opening) carry no state of
+  // the site: they do not call for a new scan. Removing one of them from the page still does.
+  const own = node => Boolean((node instanceof Element ? node : node?.parentElement)?.closest?.('[data-wme]'));
+  const observer = new MutationObserver(records => {
+    if (records.every(record => own(record.target))) return;
     // A changing count/disabled state must not leave an old open permission live.
     clearPackMarkers();
     schedule();

@@ -1,10 +1,11 @@
 /* Claim earned achievements through the site's own buttons and session.
  * No credentials, private React state, invented API or parallel claim requests.
- * Away from /achievements, a short-lived same-origin frame loads the native list.
+ * Away from /achievements, a short-lived same-origin frame loads the native list: the whole site
+ * boots in it, so it runs every quarter of an hour, and never while a pack is being opened.
  */
 (() => {
   if (window !== window.top) return;
-  const INTERVAL = 5 * 60_000;
+  const INTERVAL = 15 * 60_000;
   const STORAGE_KEY = 'wme:achievements:schedule';
   const channel = new BroadcastChannel('wme:achievements');
   let running = false;
@@ -132,7 +133,8 @@
 
   async function tick() {
     clearTimeout(timer);
-    if (!running && available()) {
+    const opening = document.documentElement.hasAttribute('data-wme-pack-opening');
+    if (!running && available() && !opening) {
       const pathChanged = lastPath !== location.pathname;
       lastPath = location.pathname;
       // Visiting the earned list explicitly should not wait for the periodic run.

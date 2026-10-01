@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "WikiRemastered pour Wiki Masters",
   "short_name": "WikiRemastered",
-  "version": "1.33.2",
+  "version": "1.33.3",
   "description": "Thème graphite, ouvertures de paquets en 3D, collection enrichie, défausse et marché pour Wiki Masters. Extension non officielle.",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "alarms"],

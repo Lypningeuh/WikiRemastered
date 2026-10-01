@@ -1,5 +1,6 @@
 import { MARKET_DEFAULTS, marketKey, marketSettings, eligibleBid, isAccount } from './market-policy.js';
 import { lateBidKey } from './late-bid-policy.js';
+import { readPrefixed } from './stored.js';
 
 const ALARM = 'wme:market-bids';
 const stopKey = account => `wme:market-stop:${account}`;
@@ -172,7 +173,7 @@ async function tick() {
   if (ticking) return;
   ticking = true;
   try {
-    const all = await chrome.storage.local.get(null);
+    const all = await readPrefixed('wme:market:');
     const accounts = Object.entries(all).filter(([key, value]) => key.startsWith('wme:market:')
       && isAccount(key.slice('wme:market:'.length)) && (value.active || value.pending))
       .map(([key]) => key.slice('wme:market:'.length));
